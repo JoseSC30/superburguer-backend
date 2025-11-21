@@ -156,7 +156,23 @@ export class TelegramService {
     }
 
     async payWithQR(chatId: number, orderId: number) {
-        await this.sendMessage(chatId, `Para pagar el pedido #${orderId} con QR, escaneá el siguiente código:\n\n[Enlace al código QR](https://example.com/qr-code-placeholder)`);
+        try {
+            await this.sendMessageButton(chatId, "Escaneá el código QR para pagar:", {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: "📱 Abrir QR de pago",
+                                web_app: { url: `${process.env.FRONTEND_QR_URL}?orderId=${orderId}` }
+                            }
+                        ]
+                    ]
+                }
+            });
+        } catch (error) {
+            console.error('Error sending QR payment:', error.response?.data);
+            throw error;
+        }
     }
 
     async payWithCash(chatId: number, orderId: number) {
