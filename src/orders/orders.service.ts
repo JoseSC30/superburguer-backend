@@ -3,12 +3,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { TelegramService } from 'src/telegram/telegram.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderStatus } from '@prisma/client';
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private telegramService: TelegramService,
-  ) {}
+  ) { }
 
   findAll() {
     return this.prisma.order.findMany({
@@ -35,6 +36,20 @@ export class OrdersService {
 
     // Llamar a la funcion sendMessageWithResumeOrder.
     await this.telegramService.sendMessageWithResumeOrder(order);
+
+    return order;
+  }
+
+  async findOneV02(id: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: { include: { product: true } },
+        user: true,
+      },
+    });
+
+    if (!order) throw new NotFoundException('Pedido no encontrado');
 
     return order;
   }
@@ -96,7 +111,7 @@ export class OrdersService {
   }
 
   async update(id: number, dto: UpdateOrderDto) {
-    await this.findOne(id);
+    //await this.findOne(id);
 
     return this.prisma.order.update({
       where: { id },
@@ -104,8 +119,16 @@ export class OrdersService {
     });
   }
 
+  async updateStatus(id: number, status: OrderStatus) {
+    //await this.findOne(id);
+    return this.prisma.order.update({
+      where: { id },
+      data: { status },
+    });
+  }
+
   async remove(id: number) {
-    await this.findOne(id);
+    //await this.findOne(id);
     return this.prisma.order.delete({
       where: { id },
     });

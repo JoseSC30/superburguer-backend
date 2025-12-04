@@ -26,6 +26,11 @@ export class OrdersController {
     return this.ordersService.findOne(id);
   }
 
+  @Get('v02/:id')
+  findOneV02(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findOneV02(id);
+  }
+
   @Post()
   create(@Body() dto: CreateOrderDto) {
     return this.ordersService.create(dto);

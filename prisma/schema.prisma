@@ -8,45 +8,96 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  telegramId String? @unique
-  name      String?
-  orders    Order[]
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  telegramId String?  @unique
+  name       String?
+  locationLat Float?
+  locationLng Float?
+  locationUpdatedAt DateTime?
+  orders     Order[]
+  createdAt  DateTime @default(now())
 }
 
 model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
-  price     Decimal  @db.Decimal(10,2)
-  imageUrl  String?
-  active    Boolean  @default(true)
+  id         Int         @id @default(autoincrement())
+  name       String
+  price      Decimal     @db.Decimal(10, 2)
+  imageUrl   String?
+  active     Boolean     @default(true)
   orderItems OrderItem[]
 }
 
 model Order {
-  id        Int            @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   userId    Int
-  user      User           @relation(fields: [userId], references: [id])
-  status    OrderStatus    @default(PENDING)
-  total     Decimal        @db.Decimal(10,2)
+  user      User        @relation(fields: [userId], references: [id])
+  status    OrderStatus @default(PENDIENTE)
+  total     Decimal     @db.Decimal(10, 2)
   items     OrderItem[]
-  createdAt DateTime       @default(now())
+  delivery Delivery?
+  createdAt DateTime    @default(now())
 }
 
 model OrderItem {
-  id         Int      @id @default(autoincrement())
-  orderId    Int
-  productId  Int
-  quantity   Int      @default(1)
-  order      Order    @relation(fields: [orderId], references: [id])
-  product    Product  @relation(fields: [productId], references: [id])
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int     @default(1)
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 }
 
 enum OrderStatus {
-  PENDING
-  CONFIRMED
-  IN_PROGRESS
-  READY
-  DELIVERED
+  PENDIENTE
+  CONFIRMADO
+  LISTO
+  EN_PROGRESO
+  ENTREGADO
+  CANCELADO
+}
+
+model Driver {
+  id          Int       @id @default(autoincrement())
+  name        String
+  username    String    @unique
+  password    String
+  placa       String?   @unique
+  activo      Boolean   @default(true)
+  latActual   Float?
+  lngActual   Float?
+  vistoPorUltimaVez DateTime?
+  entregas    Delivery[]
+  createdAt   DateTime  @default(now())
+}
+
+model Delivery {
+  id              Int            @id @default(autoincrement())
+  orderId         Int            @unique
+  driverId        Int?
+  order           Order          @relation(fields: [orderId], references: [id])
+  driver          Driver?        @relation(fields: [driverId], references: [id])
+  estado          DeliveryStatus @default(RUTA_RECOJO)
+  pickupLat       Float
+  pickupLng       Float
+  pickupNombre    String
+  dropoffLat      Float
+  dropoffLng      Float
+  dropoffNombre   String
+  dropoffDireccion String
+  dropoffReferencia String?
+  distanciaMetros Int?
+  etaSegundos     Int?
+  asignadoEn      DateTime       @default(now())
+  recogidoEn      DateTime?
+  entregadoEn     DateTime?
+  actualizadoEn   DateTime       @updatedAt
+}
+
+enum DeliveryStatus {
+  RUTA_RECOJO        // “De camino a recoger el pedido”
+  ESPERA_RESTAURANTE // “Esperando pedido”
+  RUTA_ENTREGA       // “Llevando pedido”
+  ESPERA_CLIENTE     // “Conductor esperando al cliente en destino”
+  ENTREGADO          // “Pedido entregado”
+  CANCELADO
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { TelegramService } from './telegram.service';
 
 @Controller('telegram')
@@ -6,6 +6,14 @@ export class TelegramController {
     constructor(private readonly telegramService: TelegramService) { }
 
     //   Mensajes entrantes del bot de Telegram
+
+    @Get('response-after-payqr/:chatId/:orderId')
+    async responseAfterPayWithQR(
+        @Param('chatId', ParseIntPipe) chatId: number,
+        @Param('orderId', ParseIntPipe) orderId: number,
+    ) {
+        return this.telegramService.responseAfterPayWithQR(chatId, orderId);
+    }
 
     @Post('webhook')
     async handleWebhook(@Body() body) {
@@ -46,8 +54,14 @@ export class TelegramController {
         const msg = body.message;
         if (!msg) return { ok: true };
 
-        const text = msg.text ?? '';
         const user = msg.from;
+
+        if (msg.location) {
+            await this.telegramService.saveUserLocation(user, msg.location);
+            return { ok: true };
+        }
+
+        const text = (msg.text ?? '').trim();
 
         if (text === '/start') {
             await this.telegramService.handleStart(user);
@@ -55,6 +69,10 @@ export class TelegramController {
 
         if (text === '/menu') {
             await this.telegramService.handleMenu(msg.chat.id);
+        }
+
+        if (text === '/ubicacion') {
+            await this.telegramService.requestLocation(msg.chat.id);
         }
 
         console.log('WEBHOOK BODY:', JSON.stringify(body, null, 2));
